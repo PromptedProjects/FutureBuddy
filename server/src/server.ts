@@ -9,7 +9,9 @@ import { chatRoutes } from './routes/chat.js';
 import { historyRoutes } from './routes/history.js';
 import { wsRoutes } from './routes/ws.js';
 import { actionRoutes } from './routes/actions.js';
+import { configRoutes } from './routes/config.js';
 import { requireAuth } from './middleware/auth.middleware.js';
+import { getSystemStatus } from './services/status.service.js';
 
 export async function buildServer(config: Config, logger: Logger) {
   const app = Fastify({ loggerInstance: logger });
@@ -19,14 +21,10 @@ export async function buildServer(config: Config, logger: Logger) {
 
   // --- Public routes (no auth) ---
 
-  // Health / status route (hardcoded for Phase 1, real stats added in Phase 7)
+  // Health / status route — real system stats
   app.get('/status', async () => ({
     ok: true,
-    data: {
-      version: '0.1.0',
-      uptime: process.uptime(),
-      status: 'running',
-    },
+    data: await getSystemStatus(),
   }));
 
   // Pairing routes
@@ -56,6 +54,9 @@ export async function buildServer(config: Config, logger: Logger) {
 
     // Action + trust rule routes
     await protectedScope.register(actionRoutes);
+
+    // Config routes
+    await protectedScope.register(configRoutes);
   });
 
   return app;
