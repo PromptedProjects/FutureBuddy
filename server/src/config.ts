@@ -14,6 +14,7 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   DATA_DIR: z.string().default('./data'),
+  PAIRING_ENABLED: z.coerce.boolean().default(true),
 });
 
 export type Config = z.infer<typeof envSchema>;

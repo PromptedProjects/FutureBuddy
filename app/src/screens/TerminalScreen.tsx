@@ -6,12 +6,16 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
+  KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { XTermView, type XTermHandle } from '../components/XTermView';
+import TerminalInput from '../components/TerminalInput';
 import { wsManager } from '../services/ws';
 import { uid } from '../utils/uid';
+import { useAppSettingsStore } from '../stores/appSettings.store';
 import { colors } from '../theme/tokens';
 import type { ShellOutputPayload, ShellExitPayload } from '../types/ws';
 
@@ -133,6 +137,54 @@ export default function TerminalScreen() {
     );
   }, [activeTabId]);
 
+  const handleCommandSubmit = useCallback(
+    (command: string) => {
+      wsManager.shellInput(activeTabId, command + '\n');
+    },
+    [activeTabId],
+  );
+
+  const handleTranscribe = useCallback(async (uri: string): Promise<string | null> => {
+    try {
+      const FileSystem = await import('expo-file-system/legacy');
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      if (!base64) {
+        Alert.alert('Voice error', 'Recording file was empty.');
+        return null;
+      }
+      const { transcribeAudio } = await import('../services/api');
+      const lang = useAppSettingsStore.getState().sttLanguage || undefined;
+      const res = await transcribeAudio(base64, lang);
+      if (res.ok && res.data?.text) {
+        return res.data.text;
+      } else {
+        const errMsg = !res.ok && 'error' in res ? (res as any).error : 'Unknown error';
+        Alert.alert('Transcription failed', String(errMsg));
+        return null;
+      }
+    } catch (err: any) {
+      Alert.alert('Voice error', err?.message ?? 'Transcription failed');
+      return null;
+    }
+  }, []);
+
+  const handleFileSelected = useCallback(
+    async (uri: string, name: string) => {
+      try {
+        const FileSystem = await import('expo-file-system/legacy');
+        const content = await FileSystem.readAsStringAsync(uri);
+        // Paste file contents into the terminal
+        wsManager.shellInput(activeTabId, content);
+      } catch {
+        // Binary or unreadable file — just echo the name
+        wsManager.shellInput(activeTabId, `echo "File: ${name}"\n`);
+      }
+    },
+    [activeTabId],
+  );
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Tab bar */}
@@ -188,19 +240,31 @@ export default function TerminalScreen() {
       </View>
 
       {/* xterm.js terminal — key forces re-mount per tab */}
-      <XTermView
-        key={activeTabId}
-        ref={setXtermRef}
-        onData={handleData}
-        onResize={handleResize}
-        fontSize={13}
-      />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <XTermView
+          key={activeTabId}
+          ref={setXtermRef}
+          onData={handleData}
+          onResize={handleResize}
+          fontSize={13}
+        />
+        <TerminalInput
+          onSubmit={handleCommandSubmit}
+          onTranscribe={handleTranscribe}
+          onFileSelected={handleFileSelected}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0c0c0c' },
+  flex: { flex: 1 },
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',

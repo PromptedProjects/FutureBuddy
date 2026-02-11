@@ -18,6 +18,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { useAppSettingsStore } from '../stores/appSettings.store';
 import { wsManager } from '../services/ws';
 import { clearAll } from '../services/storage';
+import { getPairingStatus, lockPairing, unlockPairing } from '../services/api';
 import { colors } from '../theme/tokens';
 
 type SubScreen = 'trust-rules' | 'models' | 'browser' | 'system' | 'scheduler' | 'skills' | null;
@@ -31,11 +32,23 @@ export default function SettingsScreen() {
   const sttLanguage = useAppSettingsStore((s) => s.sttLanguage);
   const setSttLanguage = useAppSettingsStore((s) => s.setSttLanguage);
   const loadSettings = useAppSettingsStore((s) => s.loadSettings);
+  const [pairingLocked, setPairingLocked] = useState(false);
+  const [pairingLoading, setPairingLoading] = useState(false);
 
   useEffect(() => {
     fetchConfig();
     loadSettings();
+    getPairingStatus().then((res) => {
+      if (res.ok) setPairingLocked(!res.data.pairing_enabled);
+    });
   }, [fetchConfig, loadSettings]);
+
+  async function handleTogglePairingLock(lock: boolean) {
+    setPairingLoading(true);
+    const res = lock ? await lockPairing() : await unlockPairing();
+    if (res.ok) setPairingLocked(!res.data.pairing_enabled);
+    setPairingLoading(false);
+  }
 
   const LANGUAGES = [
     { code: '', label: 'Auto-detect' },
@@ -199,6 +212,22 @@ export default function SettingsScreen() {
                 value={biometricEnabled}
                 onValueChange={() => { toggleBiometric(); }}
                 trackColor={{ false: colors.bgHover, true: colors.accent }}
+                thumbColor="white"
+              />
+            </View>
+
+            <View style={styles.separator} />
+
+            <View style={styles.navRow}>
+              <View style={styles.navRowLeft}>
+                <Feather name="shield" size={18} color={pairingLocked ? colors.success : colors.textMuted} />
+                <Text style={styles.navRowText}>Pairing Lock</Text>
+              </View>
+              <Switch
+                value={pairingLocked}
+                disabled={pairingLoading}
+                onValueChange={(val) => handleTogglePairingLock(val)}
+                trackColor={{ false: colors.bgHover, true: colors.success }}
                 thumbColor="white"
               />
             </View>

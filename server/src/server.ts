@@ -37,7 +37,10 @@ export interface ServerOptions {
 }
 
 export async function buildServer(config: Config, logger: Logger, opts?: ServerOptions) {
-  const fastifyOpts: Record<string, unknown> = { loggerInstance: logger };
+  const fastifyOpts: Record<string, unknown> = {
+    loggerInstance: logger,
+    trustProxy: true,
+  };
 
   if (opts?.https?.key && opts?.https?.cert) {
     fastifyOpts.https = { key: opts.https.key, cert: opts.https.cert };

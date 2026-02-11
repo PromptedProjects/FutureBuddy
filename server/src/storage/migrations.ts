@@ -110,6 +110,13 @@ const migrations: Migration[] = [
       );
     `,
   },
+  {
+    version: 3,
+    description: 'Session expiry column',
+    sql: `
+      ALTER TABLE sessions ADD COLUMN expires_at TEXT;
+    `,
+  },
 ];
 
 export function runMigrations(db: DatabaseSync, logger: Logger): void {

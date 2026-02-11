@@ -56,6 +56,10 @@ export async function webhookIncomingRoutes(app: FastifyInstance): Promise<void>
       reply.code(404).send({ ok: false, error: 'Webhook not found' });
       return;
     }
+    if ('error' in result) {
+      reply.code(result.status).send({ ok: false, error: result.error });
+      return;
+    }
     return { ok: true, data: result };
   });
 }

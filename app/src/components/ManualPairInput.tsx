@@ -17,14 +17,14 @@ export default function ManualPairInput({ onSubmit, loading }: ManualPairInputPr
   return (
     <View style={styles.container}>
       <Text style={styles.description}>
-        Enter the FutureBox IP address and pairing token manually.
+        Enter the FutureBox host and pairing token manually.
       </Text>
 
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Host (e.g. 192.168.1.100:3737)</Text>
+        <Text style={styles.label}>Host (IP or tunnel URL)</Text>
         <TextInput
           style={styles.input}
-          placeholder="192.168.1.x:3737"
+          placeholder="192.168.1.x:3737 or https://..."
           placeholderTextColor={colors.textMuted}
           value={host}
           onChangeText={setHost}

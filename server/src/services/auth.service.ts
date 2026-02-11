@@ -1,6 +1,8 @@
 import { nanoid } from 'nanoid';
 import { generatePairingToken, generateSessionToken, hashToken } from '../utils/crypto.js';
 import { createSession, findSessionByTokenHash, touchSession } from '../storage/repositories/session.repository.js';
+import { getDatabase } from '../storage/database.js';
+import { getConfig } from '../config.js';
 
 /** In-memory pairing tokens — short-lived, no need to persist */
 interface PairingEntry {
@@ -66,4 +68,26 @@ export function purgeExpiredPairingTokens(): number {
     }
   }
   return purged;
+}
+
+/** Check if pairing is currently enabled (runtime toggle stored in config table) */
+export function isPairingEnabled(): boolean {
+  const db = getDatabase();
+  const row = db.prepare(
+    "SELECT value FROM config WHERE key = 'pairing_enabled'"
+  ).get() as { value: string } | undefined;
+
+  if (row) return row.value === '1';
+
+  // Fall back to env var default
+  return getConfig().PAIRING_ENABLED;
+}
+
+/** Set pairing enabled/disabled (persisted in config table) */
+export function setPairingEnabled(enabled: boolean): void {
+  const db = getDatabase();
+  db.prepare(
+    `INSERT INTO config (key, value) VALUES ('pairing_enabled', ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+  ).run(enabled ? '1' : '0');
 }

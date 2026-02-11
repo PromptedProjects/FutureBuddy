@@ -11,6 +11,7 @@ import { registry } from './providers/provider-registry.js';
 import { Capability } from './providers/provider.interface.js';
 import { ensureSelfSignedCerts, loadTLSCerts } from './utils/tls.js';
 import { expireStaleActions } from './services/action.service.js';
+import { purgeExpiredSessions } from './storage/repositories/session.repository.js';
 import { loadScheduledTasks } from './services/scheduler.service.js';
 import { registerBuiltinSkills } from './services/skills.service.js';
 import { registerChannel } from './services/channel-manager.service.js';
@@ -116,16 +117,26 @@ async function main() {
   startTray(config.PORT, protocol);
   logger.info('System tray started');
 
-  // Periodic cleanup: expire stale actions every hour
+  // Purge expired/revoked sessions on startup
+  const purgedSessions = purgeExpiredSessions();
+  if (purgedSessions > 0) logger.info(`Purged ${purgedSessions} expired/revoked sessions`);
+
+  // Periodic cleanup: expire stale actions every hour, purge sessions every 24h
   const cleanupInterval = setInterval(() => {
     const expired = expireStaleActions();
     if (expired > 0) logger.info(`Expired ${expired} stale actions`);
   }, 60 * 60 * 1000);
 
+  const sessionPurgeInterval = setInterval(() => {
+    const purged = purgeExpiredSessions();
+    if (purged > 0) logger.info(`Purged ${purged} expired/revoked sessions`);
+  }, 24 * 60 * 60 * 1000);
+
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info(`${signal} received — shutting down`);
     clearInterval(cleanupInterval);
+    clearInterval(sessionPurgeInterval);
     await app.close();
     closeDatabase(logger);
     process.exit(0);

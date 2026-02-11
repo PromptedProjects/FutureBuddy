@@ -49,7 +49,8 @@ function getBaseUrl(): string {
   const host = useAuthStore.getState().host;
   if (!host) throw new Error('No host configured');
   // Host may already include protocol (http://...) or just be ip:port
-  return host.startsWith('http') ? host : `http://${host}`;
+  const base = host.startsWith('http') ? host : `http://${host}`;
+  return base.replace(/\/+$/, '');
 }
 
 async function request<T>(
@@ -93,7 +94,8 @@ async function requestWithHost<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
-  const baseUrl = host.startsWith('http') ? host : `http://${host}`;
+  const raw = host.startsWith('http') ? host : `http://${host}`;
+  const baseUrl = raw.replace(/\/+$/, '');
   const url = `${baseUrl}${path}`;
 
   const headers: Record<string, string> = {
@@ -133,6 +135,20 @@ export function pair(host: string, body: PairRequest) {
     method: 'POST',
     body: JSON.stringify(body),
   });
+}
+
+// --- Pairing lock ---
+
+export function getPairingStatus() {
+  return request<{ pairing_enabled: boolean }>('/pair/status', {}, true);
+}
+
+export function lockPairing() {
+  return request<{ pairing_enabled: boolean }>('/pair/lock', { method: 'POST', body: '{}' });
+}
+
+export function unlockPairing() {
+  return request<{ pairing_enabled: boolean }>('/pair/unlock', { method: 'POST', body: '{}' });
 }
 
 // --- Auth check ---

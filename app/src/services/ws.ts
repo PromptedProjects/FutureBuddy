@@ -32,7 +32,7 @@ class WebSocketManager {
     useConnectionStore.getState().setWSState('connecting');
 
     const protocol = host.startsWith('https') ? 'wss' : 'ws';
-    const cleanHost = host.replace(/^https?:\/\//, '');
+    const cleanHost = host.replace(/^https?:\/\//, '').replace(/\/+$/, '');
     const url = `${protocol}://${cleanHost}/ws?token=${token}`;
 
     this.ws = new WebSocket(url);

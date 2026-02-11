@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { nanoid } from 'nanoid';
 import {
   createWebhook as dbCreate,
@@ -50,14 +51,41 @@ export function deleteWebhookById(id: string): boolean {
   return dbDelete(id);
 }
 
+/** Verify HMAC-SHA256 signature for a webhook with a secret */
+function verifySignature(secret: string, body: string, signature: string): boolean {
+  const expected = createHmac('sha256', secret).update(body).digest('hex');
+  try {
+    return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(signature, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
+export interface WebhookTriggerError {
+  error: string;
+  status: number;
+}
+
 /** Trigger a webhook by slug */
 export function triggerWebhook(
   slug: string,
-  _body: unknown,
-  _headers: Record<string, string>,
-): WebhookTriggerResult | null {
+  body: unknown,
+  headers: Record<string, string>,
+): WebhookTriggerResult | WebhookTriggerError | null {
   const webhook = getWebhookBySlug(slug);
   if (!webhook) return null;
+
+  // HMAC validation when webhook has a secret
+  if (webhook.secret) {
+    const signature = headers['x-webhook-signature'];
+    if (!signature) {
+      return { error: 'Missing X-Webhook-Signature header', status: 401 };
+    }
+    const rawBody = typeof body === 'string' ? body : JSON.stringify(body);
+    if (!verifySignature(webhook.secret, rawBody, signature)) {
+      return { error: 'Invalid webhook signature', status: 401 };
+    }
+  }
 
   updateWebhookLastTriggered(webhook.id);
 
