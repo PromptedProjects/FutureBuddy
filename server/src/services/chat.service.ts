@@ -8,8 +8,28 @@ import {
   updateConversationTitle,
 } from '../storage/repositories/conversation.repository.js';
 import { createMessage, listMessages } from '../storage/repositories/message.repository.js';
+import { getToolDefinitions, executeSkillAction } from './skills.service.js';
 
-const SYSTEM_PROMPT = `You are FutureBox, a personal AI assistant that lives on a local device. You help your owner with tasks, answer questions, and can take actions on the host machine when asked. Be concise, helpful, and proactive. If an action requires permission, say so clearly.`;
+const BASE_SYSTEM_PROMPT = `You are FutureBox, a personal AI assistant that lives on a local device. You help your owner with tasks, answer questions, and can take actions on the host machine when asked. Be concise, helpful, and proactive. If an action requires permission, say so clearly.`;
+
+function buildSystemPrompt(): string {
+  const tools = getToolDefinitions();
+  if (tools.length === 0) return BASE_SYSTEM_PROMPT;
+
+  const toolList = tools.map((t) =>
+    `- ${t.function.name}: ${t.function.description}`
+  ).join('\n');
+
+  return `${BASE_SYSTEM_PROMPT}
+
+You have access to the following tools/skills on the host machine:
+${toolList}
+
+When the user asks you to perform an action, describe what you would do using these tools. If you need to invoke a tool, mention it by name.`;
+}
+
+// Re-export for external use
+export { executeSkillAction };
 
 export interface SendMessageResult {
   conversation_id: string;
@@ -38,7 +58,7 @@ export async function sendMessage(
   // Build message history for context
   const history = listMessages(convId, 50);
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: buildSystemPrompt() },
     ...history.map((m) => ({ role: m.role, content: m.content })),
   ];
 
@@ -92,7 +112,7 @@ export async function* streamMessage(
   // Build context
   const history = listMessages(convId, 50);
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: buildSystemPrompt() },
     ...history.map((m, i) => {
       const msg: ChatMessage = { role: m.role, content: m.content };
       // Attach images to the last user message (current one)

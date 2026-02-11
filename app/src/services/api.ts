@@ -23,6 +23,26 @@ import type {
   ConfigSetRequest,
   FilesListData,
   FileReadData,
+  FileWriteData,
+  FileMoveData,
+  FileCopyData,
+  ClipboardData,
+  ProcessListData,
+  ProcessLaunchData,
+  ScreenCaptureData,
+  DisplayListData,
+  BrowserTabsData,
+  PowerActionData,
+  VolumeData,
+  NetworkInterfacesData,
+  WifiNetworksData,
+  PublicIpData,
+  ScheduledTasksData,
+  WebhooksData,
+  SkillsData,
+  ToolDefinitionsData,
+  HotkeysData,
+  ChannelsData,
 } from '../types/api';
 
 function getBaseUrl(): string {
@@ -233,4 +253,311 @@ export function textToSpeech(text: string, voice?: string) {
     method: 'POST',
     body: JSON.stringify({ text, voice }),
   });
+}
+
+// --- File CRUD (Phase 1) ---
+
+export function writeFile(filePath: string, content: string) {
+  return request<FileWriteData>('/files/write', {
+    method: 'POST',
+    body: JSON.stringify({ path: filePath, content }),
+  });
+}
+
+export function mkdir(dirPath: string) {
+  return request<FileWriteData>('/files/mkdir', {
+    method: 'POST',
+    body: JSON.stringify({ path: dirPath }),
+  });
+}
+
+export function deleteFilePath(filePath: string, type?: 'file' | 'directory') {
+  return request<FileWriteData>('/files/delete', {
+    method: 'DELETE',
+    body: JSON.stringify({ path: filePath, type }),
+  });
+}
+
+export function moveFile(src: string, dest: string) {
+  return request<FileMoveData>('/files/move', {
+    method: 'POST',
+    body: JSON.stringify({ src, dest }),
+  });
+}
+
+export function copyFile(src: string, dest: string) {
+  return request<FileCopyData>('/files/copy', {
+    method: 'POST',
+    body: JSON.stringify({ src, dest }),
+  });
+}
+
+// --- Clipboard (Phase 1) ---
+
+export function getClipboard() {
+  return request<ClipboardData>('/clipboard');
+}
+
+export function setClipboard(text: string) {
+  return request<{ written: boolean }>('/clipboard', {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
+}
+
+// --- Processes (Phase 1) ---
+
+export function getProcesses() {
+  return request<ProcessListData>('/processes');
+}
+
+export function getProcessInfo(pid: number) {
+  return request<unknown>(`/processes/${pid}`);
+}
+
+export function launchApp(command: string, args?: string[], cwd?: string) {
+  return request<ProcessLaunchData>('/processes/launch', {
+    method: 'POST',
+    body: JSON.stringify({ command, args, cwd }),
+  });
+}
+
+export function killProcess(pid: number, force?: boolean) {
+  return request<{ pid: number; killed: boolean }>(`/processes/kill?pid=${pid}`, {
+    method: 'POST',
+    body: JSON.stringify({ force }),
+  });
+}
+
+// --- Screen (Phase 2) ---
+
+export function getDisplays() {
+  return request<DisplayListData>('/screen/displays');
+}
+
+export function captureScreen(displayId?: number) {
+  const query = displayId !== undefined ? `?display=${displayId}` : '';
+  return request<ScreenCaptureData>(`/screen/capture${query}`);
+}
+
+// --- Browser (Phase 2) ---
+
+export function getBrowserTabs() {
+  return request<BrowserTabsData>('/browser/tabs');
+}
+
+export function openBrowserTab(url: string) {
+  return request<unknown>('/browser/tabs', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
+}
+
+export function closeBrowserTab(id: string) {
+  return request<unknown>(`/browser/tabs/${id}`, { method: 'DELETE' });
+}
+
+export function navigateBrowserTab(id: string, url: string) {
+  return request<unknown>(`/browser/tabs/${id}/navigate`, {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
+}
+
+export function screenshotBrowserTab(id: string) {
+  return request<ScreenCaptureData>(`/browser/tabs/${id}/screenshot`);
+}
+
+export function getBrowserTabContent(id: string) {
+  return request<{ content: string }>(`/browser/tabs/${id}/content`);
+}
+
+// --- Power (Phase 3) ---
+
+export function powerShutdown(delay?: number) {
+  return request<PowerActionData>('/power/shutdown', {
+    method: 'POST',
+    body: JSON.stringify({ delay }),
+  });
+}
+
+export function powerRestart(delay?: number) {
+  return request<PowerActionData>('/power/restart', {
+    method: 'POST',
+    body: JSON.stringify({ delay }),
+  });
+}
+
+export function powerSleep() {
+  return request<PowerActionData>('/power/sleep', { method: 'POST', body: '{}' });
+}
+
+export function powerLock() {
+  return request<PowerActionData>('/power/lock', { method: 'POST', body: '{}' });
+}
+
+export function powerCancelShutdown() {
+  return request<PowerActionData>('/power/cancel', { method: 'POST', body: '{}' });
+}
+
+// --- Audio (Phase 3) ---
+
+export function getVolume() {
+  return request<VolumeData>('/audio/volume');
+}
+
+export function setVolume(level: number) {
+  return request<VolumeData>('/audio/volume', {
+    method: 'POST',
+    body: JSON.stringify({ level }),
+  });
+}
+
+export function muteAudio() {
+  return request<unknown>('/audio/mute', { method: 'POST', body: '{}' });
+}
+
+export function unmuteAudio() {
+  return request<unknown>('/audio/unmute', { method: 'POST', body: '{}' });
+}
+
+export function toggleMute() {
+  return request<unknown>('/audio/toggle', { method: 'POST', body: '{}' });
+}
+
+// --- Network (Phase 3) ---
+
+export function getNetworkInterfaces() {
+  return request<NetworkInterfacesData>('/network/interfaces');
+}
+
+export function getWifiNetworks() {
+  return request<WifiNetworksData>('/network/wifi');
+}
+
+export function getPublicIp() {
+  return request<PublicIpData>('/network/public-ip');
+}
+
+// --- Scheduler (Phase 4) ---
+
+export function getScheduledTasks() {
+  return request<ScheduledTasksData>('/tasks');
+}
+
+export function createScheduledTask(task: { name: string; cron: string; action_type: string; tier: string; action_payload?: unknown }) {
+  return request<unknown>('/tasks', {
+    method: 'POST',
+    body: JSON.stringify(task),
+  });
+}
+
+export function deleteScheduledTask(id: string) {
+  return request<unknown>(`/tasks/${id}`, { method: 'DELETE' });
+}
+
+export function runScheduledTaskNow(id: string) {
+  return request<unknown>(`/tasks/${id}/run`, { method: 'POST', body: '{}' });
+}
+
+export function enableScheduledTask(id: string) {
+  return request<unknown>(`/tasks/${id}/enable`, { method: 'POST', body: '{}' });
+}
+
+export function disableScheduledTask(id: string) {
+  return request<unknown>(`/tasks/${id}/disable`, { method: 'POST', body: '{}' });
+}
+
+// --- Webhooks (Phase 4) ---
+
+export function getWebhooks() {
+  return request<WebhooksData>('/webhooks');
+}
+
+export function createWebhook(webhook: { name: string; slug: string; action_type: string; tier: string }) {
+  return request<unknown>('/webhooks', {
+    method: 'POST',
+    body: JSON.stringify(webhook),
+  });
+}
+
+export function deleteWebhook(id: string) {
+  return request<unknown>(`/webhooks/${id}`, { method: 'DELETE' });
+}
+
+// --- Skills (Phase 5) ---
+
+export function getSkills() {
+  return request<SkillsData>('/skills');
+}
+
+export function getSkill(id: string) {
+  return request<unknown>(`/skills/${id}`);
+}
+
+export function executeSkillAction(skillId: string, action: string, params?: Record<string, unknown>) {
+  return request<unknown>(`/skills/${skillId}/execute`, {
+    method: 'POST',
+    body: JSON.stringify({ action, params }),
+  });
+}
+
+export function getToolDefinitions() {
+  return request<ToolDefinitionsData>('/skills/tools');
+}
+
+// --- Notifications (Phase 5) ---
+
+export function sendDesktopNotification(title: string, message: string) {
+  return request<{ sent: boolean }>('/notifications/desktop', {
+    method: 'POST',
+    body: JSON.stringify({ title, message }),
+  });
+}
+
+// --- Camera (Phase 6) ---
+
+export function getCameraDevices() {
+  return request<{ devices: { id: string; name: string }[] }>('/camera/devices');
+}
+
+export function capturePhoto(deviceId?: string) {
+  return request<ScreenCaptureData>('/camera/photo', {
+    method: 'POST',
+    body: JSON.stringify({ device_id: deviceId }),
+  });
+}
+
+// --- Channels (Phase 6) ---
+
+export function getChannels() {
+  return request<ChannelsData>('/channels');
+}
+
+export function enableChannel(type: string, config: Record<string, string>) {
+  return request<unknown>(`/channels/${type}/enable`, {
+    method: 'POST',
+    body: JSON.stringify({ config }),
+  });
+}
+
+export function disableChannel(type: string) {
+  return request<unknown>(`/channels/${type}/disable`, { method: 'POST', body: '{}' });
+}
+
+// --- Hotkeys (Phase 7) ---
+
+export function getHotkeys() {
+  return request<HotkeysData>('/hotkeys');
+}
+
+export function createHotkey(combo: string, actionType: string, tier?: string) {
+  return request<unknown>('/hotkeys', {
+    method: 'POST',
+    body: JSON.stringify({ combo, action_type: actionType, tier }),
+  });
+}
+
+export function deleteHotkey(id: string) {
+  return request<unknown>(`/hotkeys/${id}`, { method: 'DELETE' });
 }

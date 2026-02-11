@@ -87,3 +87,103 @@ export interface SystemStatus {
     connected_clients: number;
   };
 }
+
+// --- Phase 1: Process ---
+
+export interface ProcessInfo {
+  pid: number;
+  name: string;
+  cpu: number;
+  memory: number;
+  started: string;
+  state: string;
+  path: string;
+  command: string;
+}
+
+// --- Phase 2: Browser ---
+
+export interface TabInfo {
+  id: string;
+  url: string;
+  title: string;
+}
+
+// --- Phase 3: Network ---
+
+export interface NetworkInterface {
+  iface: string;
+  ip4: string;
+  ip6: string;
+  mac: string;
+  type: string;
+  speed: number | null;
+  dhcp: boolean;
+  operstate: string;
+}
+
+export interface WifiNetwork {
+  ssid: string;
+  bssid: string;
+  channel: number;
+  frequency: number;
+  signal: number;
+  security: string[];
+}
+
+// --- Phase 4: Scheduler + Webhooks ---
+
+export interface ScheduledTask {
+  id: string;
+  name: string;
+  cron: string;
+  action_type: string;
+  action_payload: string | null;
+  tier: ActionTier;
+  enabled: number;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  created_at: string;
+}
+
+export interface Webhook {
+  id: string;
+  name: string;
+  slug: string;
+  action_type: string;
+  action_payload: string | null;
+  tier: ActionTier;
+  secret: string | null;
+  enabled: number;
+  last_triggered_at: string | null;
+  created_at: string;
+}
+
+// --- Phase 5: Skills ---
+
+export interface SkillAction {
+  name: string;
+  description: string;
+  tier: ActionTier;
+  parameters: Record<string, { type: string; description: string; required?: boolean }>;
+}
+
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  actions: SkillAction[];
+}
+
+// --- Phase 7: Hotkeys ---
+
+export interface HotkeyBinding {
+  id: string;
+  combo: string;
+  action_type: string;
+  action_payload: string | null;
+  tier: ActionTier;
+  enabled: number;
+  created_at: string;
+}

@@ -9,6 +9,8 @@ export type WSMessageType =
   | 'shell.input'
   | 'shell.resize'
   | 'shell.kill'
+  | 'screen.capture'
+  | 'browser.command'
   | 'ping'
   // Server → Client
   | 'chat.token'
@@ -16,6 +18,8 @@ export type WSMessageType =
   | 'chat.error'
   | 'shell.output'
   | 'shell.exit'
+  | 'screen.frame'
+  | 'browser.result'
   | 'notification.action'
   | 'notification.info'
   | 'status.update'

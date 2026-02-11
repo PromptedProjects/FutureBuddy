@@ -94,3 +94,69 @@ export function readTextFile(filePath: string, maxBytes?: number): string {
 
   return fs.readFileSync(resolved, 'utf-8');
 }
+
+/** Write text content to a file (creates or overwrites) */
+export function writeTextFile(filePath: string, content: string): void {
+  const resolved = validatePath(filePath);
+  const dir = path.dirname(resolved);
+  if (!fs.existsSync(dir)) {
+    throw new Error('Parent directory not found');
+  }
+  fs.writeFileSync(resolved, content, 'utf-8');
+}
+
+/** Create a directory (recursive) */
+export function createDirectory(dirPath: string): void {
+  const resolved = validatePath(dirPath);
+  fs.mkdirSync(resolved, { recursive: true });
+}
+
+/** Delete a file */
+export function deleteFile(filePath: string): void {
+  const resolved = validatePath(filePath);
+  if (!fs.existsSync(resolved)) {
+    throw new Error('File not found');
+  }
+  const stat = fs.statSync(resolved);
+  if (!stat.isFile()) {
+    throw new Error('Path is not a file');
+  }
+  fs.unlinkSync(resolved);
+}
+
+/** Delete a directory (recursive) */
+export function deleteDirectory(dirPath: string): void {
+  const resolved = validatePath(dirPath);
+  if (!fs.existsSync(resolved)) {
+    throw new Error('Directory not found');
+  }
+  const stat = fs.statSync(resolved);
+  if (!stat.isDirectory()) {
+    throw new Error('Path is not a directory');
+  }
+  fs.rmSync(resolved, { recursive: true, force: true });
+}
+
+/** Move/rename a file or directory */
+export function moveFile(src: string, dest: string): void {
+  const resolvedSrc = validatePath(src);
+  const resolvedDest = validatePath(dest);
+  if (!fs.existsSync(resolvedSrc)) {
+    throw new Error('Source not found');
+  }
+  fs.renameSync(resolvedSrc, resolvedDest);
+}
+
+/** Copy a file */
+export function copyFile(src: string, dest: string): void {
+  const resolvedSrc = validatePath(src);
+  const resolvedDest = validatePath(dest);
+  if (!fs.existsSync(resolvedSrc)) {
+    throw new Error('Source not found');
+  }
+  const stat = fs.statSync(resolvedSrc);
+  if (!stat.isFile()) {
+    throw new Error('Source is not a file');
+  }
+  fs.copyFileSync(resolvedSrc, resolvedDest);
+}

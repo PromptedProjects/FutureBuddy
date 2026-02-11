@@ -7,6 +7,14 @@ import type {
   SystemStatus,
   TrustRule,
   TrustDecision,
+  ProcessInfo,
+  TabInfo,
+  NetworkInterface,
+  WifiNetwork,
+  ScheduledTask,
+  Webhook,
+  Skill,
+  HotkeyBinding,
 } from './models';
 
 // Standard response wrappers
@@ -130,4 +138,114 @@ export interface FilesListData {
 export interface FileReadData {
   path: string;
   content: string;
+}
+
+export interface FileWriteData {
+  path: string;
+}
+
+export interface FileMoveData {
+  src: string;
+  dest: string;
+}
+
+export interface FileCopyData {
+  src: string;
+  dest: string;
+}
+
+// --- Clipboard ---
+
+export interface ClipboardData {
+  text: string;
+}
+
+// --- Processes ---
+
+export interface ProcessListData {
+  processes: ProcessInfo[];
+}
+
+export interface ProcessLaunchData {
+  pid: number;
+  command: string;
+}
+
+// --- Screen ---
+
+export interface ScreenCaptureData {
+  image: string;
+  format: string;
+  encoding: string;
+}
+
+export interface DisplayListData {
+  displays: { id: number; name: string; primary: boolean }[];
+}
+
+// --- Browser ---
+
+export interface BrowserTabsData {
+  tabs: TabInfo[];
+}
+
+// --- Power ---
+
+export interface PowerActionData {
+  action: string;
+  delay?: number;
+}
+
+// --- Audio ---
+
+export interface VolumeData {
+  level: number;
+}
+
+// --- Network ---
+
+export interface NetworkInterfacesData {
+  interfaces: NetworkInterface[];
+}
+
+export interface WifiNetworksData {
+  networks: WifiNetwork[];
+}
+
+export interface PublicIpData {
+  ip: string;
+}
+
+// --- Scheduler ---
+
+export interface ScheduledTasksData {
+  tasks: ScheduledTask[];
+}
+
+// --- Webhooks ---
+
+export interface WebhooksData {
+  webhooks: Webhook[];
+}
+
+// --- Skills ---
+
+export interface SkillsData {
+  skills: Skill[];
+}
+
+export interface ToolDefinitionsData {
+  tools: unknown[];
+}
+
+// --- Hotkeys ---
+
+export interface HotkeysData {
+  hotkeys: HotkeyBinding[];
+}
+
+// --- Channels ---
+
+export interface ChannelsData {
+  channels: { type: string; running: boolean }[];
 }

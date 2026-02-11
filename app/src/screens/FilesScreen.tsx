@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from '@react-navigation/native';
-import { listFiles, readFile } from '../services/api';
+import { listFiles, readFile, writeFile, mkdir, deleteFilePath, moveFile } from '../services/api';
 import { colors } from '../theme/tokens';
 import type { FileEntry } from '../types/api';
 
@@ -99,6 +99,71 @@ export default function FilesScreen() {
     }
   }
 
+  async function handleNewFile() {
+    Alert.prompt?.('New File', 'Enter file name:', async (name) => {
+      if (!name) return;
+      const filePath = currentPath + '\\' + name;
+      const res = await writeFile(filePath, '');
+      if (res.ok) fetchDir(currentPath);
+      else Alert.alert('Error', res.error);
+    });
+    // Fallback for Android (no Alert.prompt)
+    if (!Alert.prompt) {
+      const name = 'new-file.txt';
+      const filePath = currentPath + '\\' + name;
+      const res = await writeFile(filePath, '');
+      if (res.ok) fetchDir(currentPath);
+      else Alert.alert('Error', res.error);
+    }
+  }
+
+  async function handleNewFolder() {
+    Alert.prompt?.('New Folder', 'Enter folder name:', async (name) => {
+      if (!name) return;
+      const dirPath = currentPath + '\\' + name;
+      const res = await mkdir(dirPath);
+      if (res.ok) fetchDir(currentPath);
+      else Alert.alert('Error', res.error);
+    });
+    if (!Alert.prompt) {
+      const name = 'new-folder';
+      const dirPath = currentPath + '\\' + name;
+      const res = await mkdir(dirPath);
+      if (res.ok) fetchDir(currentPath);
+      else Alert.alert('Error', res.error);
+    }
+  }
+
+  function handleDeleteEntry(entry: FileEntry) {
+    Alert.alert(
+      'Delete',
+      `Delete "${entry.name}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const res = await deleteFilePath(entry.path, entry.type);
+            if (res.ok) fetchDir(currentPath);
+            else Alert.alert('Error', res.error);
+          },
+        },
+      ]
+    );
+  }
+
+  function handleRenameEntry(entry: FileEntry) {
+    Alert.prompt?.('Rename', `Rename "${entry.name}" to:`, async (newName) => {
+      if (!newName) return;
+      const parent = entry.path.replace(/\\[^\\]+$/, '');
+      const dest = parent + '\\' + newName;
+      const res = await moveFile(entry.path, dest);
+      if (res.ok) fetchDir(currentPath);
+      else Alert.alert('Error', res.error);
+    }, 'plain-text', entry.name);
+  }
+
   function handleTapEntry(entry: FileEntry) {
     if (entry.type === 'directory') {
       navigateTo(entry.path);
@@ -108,6 +173,8 @@ export default function FilesScreen() {
     Alert.alert(entry.name, undefined, [
       { text: 'Copy Path', onPress: () => copyPath(entry.path) },
       { text: 'Preview', onPress: () => handlePreview(entry) },
+      { text: 'Rename', onPress: () => handleRenameEntry(entry) },
+      { text: 'Delete', onPress: () => handleDeleteEntry(entry), style: 'destructive' },
       { text: 'Cancel', style: 'cancel' },
     ]);
   }
@@ -165,7 +232,14 @@ export default function FilesScreen() {
             <Feather name="arrow-left" size={20} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Files</Text>
-          <View style={{ width: 36 }} />
+          <View style={styles.headerActions}>
+            <Pressable onPress={handleNewFile} style={styles.headerBtn}>
+              <Feather name="file-plus" size={18} color={colors.accent} />
+            </Pressable>
+            <Pressable onPress={handleNewFolder} style={styles.headerBtn}>
+              <Feather name="folder-plus" size={18} color={colors.accent} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Path bar + breadcrumbs */}
@@ -216,7 +290,14 @@ export default function FilesScreen() {
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => handleTapEntry(item)}
-                onLongPress={() => copyPath(item.path)}
+                onLongPress={() => {
+                  Alert.alert(item.name, undefined, [
+                    { text: 'Copy Path', onPress: () => copyPath(item.path) },
+                    { text: 'Rename', onPress: () => handleRenameEntry(item) },
+                    { text: 'Delete', onPress: () => handleDeleteEntry(item), style: 'destructive' },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                }}
                 style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
               >
                 <Feather
@@ -264,6 +345,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   backBtn: { width: 36, alignItems: 'flex-start' },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  headerBtn: { padding: 4 },
   copyBtn: { width: 36, alignItems: 'flex-end' },
   headerTitle: {
     flex: 1,

@@ -7,6 +7,10 @@ import StatusCard from '../components/StatusCard';
 import ConfigRow from '../components/ConfigRow';
 import TrustRulesScreen from './TrustRulesScreen';
 import ModelsScreen from './ModelsScreen';
+import BrowserScreen from './BrowserScreen';
+import SystemScreen from './SystemScreen';
+import SchedulerScreen from './SchedulerScreen';
+import SkillsScreen from './SkillsScreen';
 import { useStatus } from '../hooks/useStatus';
 import { useConfig } from '../hooks/useConfig';
 import { useBiometric } from '../hooks/useBiometric';
@@ -16,7 +20,7 @@ import { wsManager } from '../services/ws';
 import { clearAll } from '../services/storage';
 import { colors } from '../theme/tokens';
 
-type SubScreen = 'trust-rules' | 'models' | null;
+type SubScreen = 'trust-rules' | 'models' | 'browser' | 'system' | 'scheduler' | 'skills' | null;
 
 export default function SettingsScreen() {
   const [subScreen, setSubScreen] = useState<SubScreen>(null);
@@ -85,6 +89,18 @@ export default function SettingsScreen() {
   if (subScreen === 'models') {
     return <ModelsScreen onBack={() => setSubScreen(null)} />;
   }
+  if (subScreen === 'browser') {
+    return <BrowserScreen />;
+  }
+  if (subScreen === 'system') {
+    return <SystemScreen />;
+  }
+  if (subScreen === 'scheduler') {
+    return <SchedulerScreen />;
+  }
+  if (subScreen === 'skills') {
+    return <SkillsScreen />;
+  }
 
   const configKeys = Object.keys(config).sort();
 
@@ -118,6 +134,54 @@ export default function SettingsScreen() {
                 <View style={styles.navRowLeft}>
                   <Feather name="cpu" size={18} color={colors.accent} />
                   <Text style={styles.navRowText}>Models</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
+              </View>
+            </Pressable>
+
+            <View style={styles.separator} />
+
+            <Pressable onPress={() => setSubScreen('browser')}>
+              <View style={styles.navRow}>
+                <View style={styles.navRowLeft}>
+                  <Feather name="globe" size={18} color={colors.accent} />
+                  <Text style={styles.navRowText}>Browser</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
+              </View>
+            </Pressable>
+
+            <View style={styles.separator} />
+
+            <Pressable onPress={() => setSubScreen('system')}>
+              <View style={styles.navRow}>
+                <View style={styles.navRowLeft}>
+                  <Feather name="monitor" size={18} color={colors.accent} />
+                  <Text style={styles.navRowText}>System Controls</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
+              </View>
+            </Pressable>
+
+            <View style={styles.separator} />
+
+            <Pressable onPress={() => setSubScreen('scheduler')}>
+              <View style={styles.navRow}>
+                <View style={styles.navRowLeft}>
+                  <Feather name="clock" size={18} color={colors.accent} />
+                  <Text style={styles.navRowText}>Automation</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
+              </View>
+            </Pressable>
+
+            <View style={styles.separator} />
+
+            <Pressable onPress={() => setSubScreen('skills')}>
+              <View style={styles.navRow}>
+                <View style={styles.navRowLeft}>
+                  <Feather name="zap" size={18} color={colors.accent} />
+                  <Text style={styles.navRowText}>Skills</Text>
                 </View>
                 <Feather name="chevron-right" size={18} color={colors.textMuted} />
               </View>

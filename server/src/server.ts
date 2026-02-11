@@ -14,6 +14,20 @@ import { configRoutes } from './routes/config.js';
 import { transcribeRoutes } from './routes/transcribe.js';
 import { ttsRoutes } from './routes/tts.js';
 import { filesRoutes } from './routes/files.js';
+import { clipboardRoutes } from './routes/clipboard.js';
+import { processRoutes } from './routes/process.js';
+import { screenRoutes } from './routes/screen.js';
+import { browserRoutes } from './routes/browser.js';
+import { powerRoutes } from './routes/power.js';
+import { audioRoutes } from './routes/audio.js';
+import { networkRoutes } from './routes/network.js';
+import { schedulerRoutes } from './routes/scheduler.js';
+import { webhookRoutes, webhookIncomingRoutes } from './routes/webhook.js';
+import { notificationRoutes } from './routes/notification.js';
+import { skillsRoutes } from './routes/skills.js';
+import { cameraRoutes } from './routes/camera.js';
+import { channelRoutes } from './routes/channels.js';
+import { hotkeyRoutes } from './routes/hotkeys.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 import { errorHandler } from './middleware/error-handler.middleware.js';
 import { getSystemStatus } from './services/status.service.js';
@@ -57,6 +71,9 @@ export async function buildServer(config: Config, logger: Logger, opts?: ServerO
   // WebSocket (auth handled inside via query param)
   await app.register(wsRoutes);
 
+  // Webhook incoming route (public — no auth required)
+  await app.register(webhookIncomingRoutes);
+
   // --- Protected routes (require auth) ---
   app.register(async (protectedScope) => {
     protectedScope.addHook('preHandler', requireAuth);
@@ -88,8 +105,50 @@ export async function buildServer(config: Config, logger: Logger, opts?: ServerO
     // TTS routes
     await protectedScope.register(ttsRoutes);
 
-    // Files routes
+    // Files routes (Phase 1: now with CRUD)
     await protectedScope.register(filesRoutes);
+
+    // Clipboard routes (Phase 1)
+    await protectedScope.register(clipboardRoutes);
+
+    // Process management routes (Phase 1)
+    await protectedScope.register(processRoutes);
+
+    // Screen capture routes (Phase 2)
+    await protectedScope.register(screenRoutes);
+
+    // Browser control routes (Phase 2)
+    await protectedScope.register(browserRoutes);
+
+    // Power management routes (Phase 3)
+    await protectedScope.register(powerRoutes);
+
+    // Audio control routes (Phase 3)
+    await protectedScope.register(audioRoutes);
+
+    // Network info routes (Phase 3)
+    await protectedScope.register(networkRoutes);
+
+    // Scheduler routes (Phase 4)
+    await protectedScope.register(schedulerRoutes);
+
+    // Webhook management routes (Phase 4)
+    await protectedScope.register(webhookRoutes);
+
+    // Notification routes (Phase 5)
+    await protectedScope.register(notificationRoutes);
+
+    // Skills routes (Phase 5)
+    await protectedScope.register(skillsRoutes);
+
+    // Camera routes (Phase 6)
+    await protectedScope.register(cameraRoutes);
+
+    // Channel routes (Phase 6)
+    await protectedScope.register(channelRoutes);
+
+    // Hotkey routes (Phase 7)
+    await protectedScope.register(hotkeyRoutes);
   });
 
   return app;

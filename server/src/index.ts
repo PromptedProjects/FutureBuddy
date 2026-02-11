@@ -11,6 +11,14 @@ import { registry } from './providers/provider-registry.js';
 import { Capability } from './providers/provider.interface.js';
 import { ensureSelfSignedCerts, loadTLSCerts } from './utils/tls.js';
 import { expireStaleActions } from './services/action.service.js';
+import { loadScheduledTasks } from './services/scheduler.service.js';
+import { registerBuiltinSkills } from './services/skills.service.js';
+import { registerChannel } from './services/channel-manager.service.js';
+import { TelegramChannel } from './services/channels/telegram.channel.js';
+import { DiscordChannel } from './services/channels/discord.channel.js';
+import { SlackChannel } from './services/channels/slack.channel.js';
+import { registerProtocol } from './services/deeplink.service.js';
+import { startTray } from './services/tray.service.js';
 
 async function main() {
   const config = loadConfig();
@@ -82,6 +90,31 @@ async function main() {
   await app.listen({ host: config.HOST, port: config.PORT });
   const protocol = serverOpts?.https ? 'https' : 'http';
   logger.info(`FutureBox listening on ${protocol}://${config.HOST}:${config.PORT}`);
+
+  // Register built-in skills (Phase 5)
+  registerBuiltinSkills();
+  logger.info('Built-in skills registered');
+
+  // Load scheduled tasks (Phase 4)
+  try {
+    await loadScheduledTasks();
+    logger.info('Scheduled tasks loaded');
+  } catch (err) {
+    logger.warn('Failed to load scheduled tasks: ' + String(err));
+  }
+
+  // Register channel adapters (Phase 6)
+  registerChannel(new TelegramChannel());
+  registerChannel(new DiscordChannel());
+  registerChannel(new SlackChannel());
+  logger.info('Channel adapters registered (Telegram, Discord, Slack)');
+
+  // Register deep link protocol (Phase 7)
+  registerProtocol(`${protocol}://localhost:${config.PORT}`);
+
+  // Start system tray (Phase 7)
+  startTray(config.PORT, protocol);
+  logger.info('System tray started');
 
   // Periodic cleanup: expire stale actions every hour
   const cleanupInterval = setInterval(() => {

@@ -69,6 +69,47 @@ const migrations: Migration[] = [
       );
     `,
   },
+  {
+    version: 2,
+    description: 'Scheduled tasks, webhooks, and hotkeys tables',
+    sql: `
+      CREATE TABLE scheduled_tasks (
+        id             TEXT PRIMARY KEY,
+        name           TEXT NOT NULL,
+        cron           TEXT NOT NULL,
+        action_type    TEXT NOT NULL,
+        action_payload TEXT,
+        tier           TEXT NOT NULL CHECK (tier IN ('red', 'yellow', 'green')),
+        enabled        INTEGER NOT NULL DEFAULT 1,
+        last_run_at    TEXT,
+        next_run_at    TEXT,
+        created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE webhooks (
+        id                TEXT PRIMARY KEY,
+        name              TEXT NOT NULL,
+        slug              TEXT NOT NULL UNIQUE,
+        action_type       TEXT NOT NULL,
+        action_payload    TEXT,
+        tier              TEXT NOT NULL CHECK (tier IN ('red', 'yellow', 'green')),
+        secret            TEXT,
+        enabled           INTEGER NOT NULL DEFAULT 1,
+        last_triggered_at TEXT,
+        created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE hotkeys (
+        id         TEXT PRIMARY KEY,
+        combo      TEXT NOT NULL UNIQUE,
+        action_type TEXT NOT NULL,
+        action_payload TEXT,
+        tier       TEXT NOT NULL CHECK (tier IN ('red', 'yellow', 'green')),
+        enabled    INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `,
+  },
 ];
 
 export function runMigrations(db: DatabaseSync, logger: Logger): void {
